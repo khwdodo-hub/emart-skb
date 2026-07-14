@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>이마트-SKB 통합 장애관리 시스템</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            emartYellow: '#FFB800',
+            emartDarkYellow: '#E0A100',
+            skbOrange: '#F26522',
+            skbBlue: '#0066B3',
+            skbLightBlue: '#F0F7FF'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* 50~60대 사용자 가독성을 위한 특대형 고대비 볼드 폰트 */
+    body, input, select, textarea, label, button, h1, h2, h3, h4, p, span, li, option, datalist {
+      font-size: 1.125rem !important; 
+      line-height: 1.5 !important; 
+      font-weight: 700 !important; 
+    }
+    .tab-active {
+      border-bottom-width: 4px;
+      border-color: #0066B3;
+      color: #0066B3;
+    }
+    /* 모바일 밀집도 향상을 위한 칸 간격 좁히기 적용 */
+    input, select, textarea {
+      padding: 0.75rem !important;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-950 font-sans">
+
+  <!-- Header with Corporate CI Logos -->
+  <header class="bg-white border-b-2 border-gray-200 sticky top-0 z-40 shadow shadow-sm py-2">
+    <div class="max-w-4xl mx-auto px-4 flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <!-- 1. 이마트 공식 로고 (높이 4rem 고정) -->
+        <img id="emart_logo_img" src="https://drive.google.com/thumbnail?authuser=0&sz=w1000&id=14K93lEq6CjLR55HhfrsEcim0Cs444Nk1" alt="이마트 로고" class="h-16 w-auto object-contain" style="height: 4rem;" />
+        <span class="text-gray-300 text-2xl font-bold">|</span>
+        <!-- 2. SKB 공식 로고 (높이 4rem 고정) -->
+        <img id="skb_logo_img" src="https://drive.google.com/thumbnail?authuser=0&sz=w1000&id=1hRx6dKXOvO0M2I1yOthheDrPsOivMbft" alt="SKB 로고" class="h-16 w-auto object-contain" style="height: 4rem;" onerror="this.src='https://via.placeholder.com/150x50?text=SK+Broadband'" />
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <div class="max-w-4xl mx-auto px-3 mt-3">
+    <div class="flex bg-white rounded-xl shadow border-2 border-gray-100 overflow-hidden">
+      <button id="tabReportBtn" onclick="switchTab('report')" class="w-1/3 py-3 text-center hover:bg-gray-50 focus:outline-none transition-all tab-active">
+        📢 장애 신고 접수
+      </button>
+      <button id="tabTrackBtn" onclick="switchTab('track')" class="w-1/3 py-3 text-center text-gray-500 hover:bg-gray-50 focus:outline-none transition-all">
+        🔍 진행상황 확인
+      </button>
+      <button id="tabManualBtn" onclick="switchTab('manual')" class="w-1/3 py-3 text-center text-gray-500 hover:bg-gray-50 focus:outline-none transition-all">
+        📚 자가조치 가이드
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <main class="max-w-4xl mx-auto px-3 mt-3 mb-10">
+    <div class="bg-white rounded-2xl shadow-md p-4 sm:p-5 border border-gray-100">
+
+      <!-- ==================== Tab 1: 장애 신고 접수 (Report) ==================== -->
+      <section id="tabReport" class="space-y-4">
+        
+        <!-- [필수] 개인정보 수집 및 동의 영역 -->
+        <div id="consentSection" class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 space-y-2">
+          <div class="flex items-start space-x-3">
+            <span class="text-2xl mt-0.5">📝</span>
+            <div>
+              <h3 class="text-blue-950 text-base">개인정보 수집 및 이용 동의 (필수)</h3>
+              <p class="text-blue-900 mt-1 text-sm leading-relaxed font-semibold">
+                장애 신고 접수 및 진행 과정 안내 통보를 위해 먼저 동의해 주셔야 합니다.<br>
+                동의 완료 체크 시 하단에 신고서 작성 세부 항목이 자동으로 활성화됩니다.
+              </p>
+            </div>
+          </div>
+          
+          <div class="bg-white border border-blue-100 rounded-lg p-2.5 max-h-24 overflow-y-auto text-sm leading-relaxed text-gray-600 font-semibold">
+            - 수집 항목: 휴대전화 번호<br>
+            - 이용 목적: 장애 신고 접수, 진행 상황 추적 및 조치 결과 문자 통보<br>
+            - 보존 기간: 장애 이력 관리 보존 기한 종료 후 완전 파기
+          </div>
+          
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
+            <label class="flex items-center space-x-3 cursor-pointer text-gray-800 text-sm">
+              <input type="checkbox" id="privacyConsentCheckbox" onchange="handleConsentChange(this)" class="h-6 w-6 rounded-lg text-skbBlue focus:ring-skbBlue border-2 border-gray-300" />
+              <span>위 개인정보 수집 및 이용에 동의합니다.</span>
+            </label>
+            <span id="consentTimeDisplay" class="text-sm text-skbBlue font-black"></span>
+          </div>
+        </div>
+
+        <!-- Consent Lock Overlay Guard -->
+        <div id="consentPromptMsg" class="text-center py-6 bg-gray-50 border border-dashed rounded-xl">
+          <p class="text-sm font-bold text-gray-400 font-semibold">⚠️ 먼저 위의 개인정보 수집 이용 동의를 체크하셔야 신고 작성이 활성화됩니다.</p>
+        </div>
+
+        <!-- ==================== 동의 후 잠금 해제되는 신고 폼 구역 ==================== -->
+        <div id="reportFormArea" class="hidden space-y-4">
+          <div class="border-t border-gray-100 pt-3 flex justify-between items-center">
+            <h3 class="text-base">장애 접수 방식 선택</h3>
+          </div>
+
+          <!-- 접수 방법 선택 -->
+          <div class="grid grid-cols-2 gap-3">
+            <button type="button" id="btnMethodPhone" onclick="selectReportMethod('phone')" class="p-3 border-2 border-gray-200 rounded-xl flex flex-col items-center justify-center space-y-1 bg-white text-center focus:outline-none">
+              <span class="text-3xl">📞</span>
+              <span class="text-gray-800 text-sm">전화 신고 접수</span>
+              <span class="text-gray-400 text-xs font-bold">1670-8216 내선 1번</span>
+            </button>
+            <button type="button" id="btnMethodWeb" onclick="selectReportMethod('web')" class="p-3 border-2 border-gray-200 rounded-xl flex flex-col items-center justify-center space-y-1 bg-white text-center focus:outline-none">
+              <span class="text-3xl">💻</span>
+              <span class="text-gray-800 text-sm">웹 신고 접수</span>
+              <span class="text-gray-400 text-xs font-bold">시리얼번호 실시간 연동</span>
+            </button>
+          </div>
+
+          <!-- 1-1. 전화 신고 상세 안내 구역 (도메인 에러 차단 완료) -->
+          <div id="phoneReportArea" class="hidden bg-orange-50 border-2 border-orange-200 rounded-xl p-4 space-y-3">
+            <div class="flex items-start space-x-3">
+              <span class="text-2xl mt-0.5">💡</span>
+              <div>
+                <h3 class="text-orange-950 text-sm">전화 신고 및 사후 웹등록 안내</h3>
+                <p class="text-xs text-orange-900 mt-1 leading-relaxed">
+                  아래 전화를 걸어 <strong>SK브로드밴드 장애 접수 센터(1670-8216 + 내선 1번)</strong>로 접수해 주세요.<br>
+                  통화 종료 후 원활한 조치 관리를 위해 오른쪽의 <strong>'웹 신고'</strong>를 함께 등록해 주시면 빠른 처리가 가능합니다 (선택 사항).
+                </p>
+              </div>
+            </div>
+            <a href="tel:1670-8216" class="w-full bg-skbOrange hover:bg-orange-600 text-white font-black py-3 rounded-lg flex items-center justify-center space-x-2 shadow transition text-sm">
+              <span>📞 1670-8216 (내선 1번) 전화 걸기</span>
+            </a>
+          </div>
+
+          <!-- 1-2. 웹 신고 접수 양식 구역 -->
+          <form id="reportForm" onsubmit="handleReportSubmit(event)" class="hidden space-y-4">
+            
+            <!-- 시리얼 번호 입력 및 모름 모드 전환 스위치 -->
+            <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-2">
+              <div class="flex justify-between items-center flex-wrap gap-1">
+                <label class="block text-sm font-black text-gray-700">1. 사이니지 시리얼 번호 입력</label>
+                <!-- 시리얼번호 모름 체크박스 -->
+                <label class="flex items-center space-x-2 cursor-pointer text-skbOrange text-sm">
+                  <input type="checkbox" id="skipSerialCheckbox" onchange="toggleSerialSkipMode(this)" class="h-6 w-6 rounded text-skbOrange focus:ring-skbOrange border-2 border-gray-300" />
+                  <span>시리얼번호 모름 (수동 선택)</span>
+                </label>
+              </div>
+
+              <!-- 시리얼 번호 조회 인풋 영역 -->
+              <div id="serialInputContainer" class="flex space-x-2">
+                <input type="text" id="serialNoInput" maxlength="7" pattern="[0-9]{7}" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,7)" placeholder="숫자 7자리 입력 (예: 1077001)" class="flex-grow p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-skbBlue focus:outline-none" />
+                <button type="button" onclick="performSerialLookup()" class="bg-skbBlue hover:bg-blue-700 text-white px-5 rounded-xl transition text-sm">
+                  조회
+                </button>
+              </div>
+
+              <!-- 조회 성공 시 노출 구역 -->
+              <div id="lookupDisplayArea" class="hidden bg-white border-2 border-blue-200 rounded-xl p-3 space-y-2 shadow-sm">
+                <div class="flex justify-between items-center border-b pb-1.5">
+                  <span class="text-skbBlue text-sm uppercase tracking-wider">데이터베이스 자동 연동 정보</span>
+                  <button type="button" onclick="resetSerialLookup()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded text-sm transition">
+                    🔄 리셋 (다시 입력)
+                  </button>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-sm text-gray-700">
+                  <div><span class="text-gray-400 block text-xs">조회된 점포명</span> <span id="dispStoreName" class="text-gray-900 font-bold">-</span></div>
+                  <div><span class="text-gray-400 block text-xs">관할 담당팀</span> <span id="dispStoreManager" class="text-gray-900 font-bold">-</span></div>
+                  <div><span class="text-gray-400 block text-xs">매체 종류</span> <span id="dispMediaType" class="text-gray-900 font-bold">-</span></div>
+                  <div><span class="text-gray-400 block text-xs">설치 위치</span> <span id="dispLocation" class="text-gray-900 font-bold">-</span></div>
+                  <div><span class="text-gray-400 block text-xs">서비스 번호</span> <span id="dispServiceNo" class="text-gray-900 font-bold">-</span></div>
+                  <div><span class="text-gray-400 block text-xs">MAC 주소</span> <span id="dispMacAddress" class="text-gray-900 font-bold">-</span></div>
+                </div>
+              </div>
+
+              <!-- 시리얼 번호 모름 수동 입력 구역 (HTML5 Validation Block 버그 수정을 위해 required 속성 제거) -->
+              <div id="manualInputArea" class="hidden bg-white border-2 border-yellow-200 rounded-xl p-3 space-y-3 shadow-sm">
+                <span class="text-yellow-800 block text-sm uppercase">매장 및 매체 정보 직접 설정</span>
+                <div>
+                  <label class="block text-xs font-black text-gray-600 mb-1">점포명 검색 및 선택 (필수)</label>
+                  <input type="text" id="storeSelectInput" list="storeOptions" placeholder="지점명을 선택하세요 (예: 검단점)" class="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-skbBlue text-sm" />
+                  <datalist id="storeOptions"></datalist>
+                </div>
+                <div>
+                  <label class="block text-xs font-black text-gray-600 mb-1">매체 종류 선택</label>
+                  <select id="manualMediaType" class="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-skbBlue text-sm">
+                    <option value="모름">모름 (선택)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-black text-gray-600 mb-1">설치 구체적 장소 기재</label>
+                  <input type="text" id="manualLocation" placeholder="예: 1층 고객센터 앞 천정형" class="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:outline-none text-sm" />
+                </div>
+              </div>
+            </div>
+
+            <!-- 연락처(최대 11자리 제한) 및 비밀번호 설정 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-black text-gray-700 mb-1">2. 신고자 연락처 (숫자만 최대 11자리)</label>
+                <input type="text" id="reporterPhone" maxlength="11" pattern="[0-9]*" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0,11)" placeholder="숫자만 입력 (예: 01012345678)" class="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-skbBlue focus:outline-none" required />
+              </div>
+              <div>
+                <label class="block text-sm font-black text-gray-700 mb-1">3. 조회 비밀번호 (숫자 4자리)</label>
+                <input type="password" id="reportPassword" pattern="[0-9]{4}" placeholder="예: 1234" maxlength="4" class="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-skbBlue focus:outline-none" required />
+              </div>
+            </div>
+
+            <!-- 장애 상태 선택 -->
+            <div class="space-y-1.5">
+              <label class="block text-sm font-black text-gray-700">4. 현재 장애 상태 선택 (필수)</label>
+              <div class="grid grid-cols-1 gap-1.5">
+                <label class="border-2 p-3 rounded-xl flex items-center cursor-pointer hover:bg-gray-50 transition">
+                  <input type="radio" name="faultStatus" value="검은화면, 꺼져 있음" class="mr-3 h-6 w-6 text-skbBlue" required checked>
+                  <span class="text-gray-800 text-sm">검은화면, 꺼져 있음</span>
+                </label>
+                <label class="border-2 p-3 rounded-xl flex items-center cursor-pointer hover:bg-gray-50 transition">
+                  <input type="radio" name="faultStatus" value="오류 문구 송출" class="mr-3 h-6 w-6 text-skbBlue">
+                  <span class="text-gray-800 text-sm">오류 문구 송출</span>
+                </label>
+                <label class="border-2 p-3 rounded-xl flex items-center cursor-pointer hover:bg-gray-50 transition">
+                  <input type="radio" name="faultStatus" value="광고 대신 다른 화면 나옴" class="mr-3 h-6 w-6 text-skbBlue">
+                  <span class="text-gray-800 text-sm">광고 대신 다른 화면 나옴</span>
+                </label>
+                <label class="border-2 p-3 rounded-xl flex items-center cursor-pointer hover:bg-gray-50 transition">
+                  <input type="radio" name="faultStatus" value="신호 없음, 화면 멈춤" class="mr-3 h-6 w-6 text-skbBlue">
+                  <span class="text-gray-800 text-sm">신호 없음, 화면 멈춤</span>
+                </label>
+                <label class="border-2 p-3 rounded-xl flex items-center cursor-pointer hover:bg-gray-50 transition">
+                  <input type="radio" name="faultStatus" value="모니터 파손, 화소 깨짐" class="mr-3 h-6 w-6 text-skbBlue">
+                  <span class="text-gray-800 text-sm">모니터 파손, 화소 깨짐</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 상세 내용 (선택) -->
+            <div>
+              <label class="block text-sm font-black text-gray-700 mb-1" for="detailedDesc">5. 상세 특이사항 기재 (선택)</label>
+              <textarea id="detailedDesc" rows="2" placeholder="예: 화면이 멈춘 뒤 리모컨 전원을 눌러도 반응이 없습니다." class="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-skbBlue focus:outline-none text-sm"></textarea>
+            </div>
+
+            <!-- 사진 업로드 -->
+            <div>
+              <label class="block text-sm font-black text-gray-700 mb-1">6. 현장 실물 증상 사진 업로드 (선택)</label>
+              <div class="border-3 border-dashed border-gray-300 rounded-xl p-4 text-center cursor-pointer hover:bg-gray-50 relative">
+                <input type="file" id="photoFile" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer" onchange="previewImage(this)" />
+                <div id="uploadPlaceholder" class="space-y-1 py-2">
+                  <span class="text-4xl block">📸</span>
+                  <p class="text-gray-600 text-sm">카메라 촬영 혹은 파일 첨부</p>
+                  <p class="text-gray-400 text-xs">업로드 시 화질 유지용 초경량 압축 자동 연동</p>
+                </div>
+                <div id="imagePreviewContainer" class="hidden relative max-w-xs mx-auto">
+                  <img id="imagePreview" src="#" alt="미리보기" class="rounded-lg shadow max-h-36 mx-auto" />
+                  <button type="button" onclick="removeImage(event)" class="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full font-bold hover:bg-red-600 shadow-md">✕</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 제출 버튼 -->
+            <div class="pt-2">
+              <button type="submit" id="submitBtn" class="w-full bg-emartYellow hover:bg-emartDarkYellow text-white font-black py-4 rounded-xl shadow transition text-base">
+                🚀 장애 신고 등록 완료
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ==================== Tab 2: 나의 신고 및 조치 조회 (Track) ==================== -->
+      <section id="tabTrack" class="hidden space-y-4">
+        <div class="border-b border-gray-100 pb-2">
+          <h2 class="text-skbBlue flex items-center text-base">
+            <span class="mr-2 text-lg">🔎</span> 진행상황 및 조치 결과 확인
+          </h2>
+          <p class="text-gray-400 text-xs mt-0.5">조회 주체 역할을 활성화한 뒤 최초 비밀번호(4자리) 혹은 조치자 전용키(6자리)를 입력해 주세요.</p>
+        </div>
+
+        <div class="space-y-3">
+          <!-- 주체 역할 선택용 토글 스위치 패널 -->
+          <div class="flex items-center justify-between bg-gray-100 p-2 rounded-xl">
+            <span class="text-sm font-black text-gray-700">🔎 조회 주체 역할 선택</span>
+            <div class="flex items-center space-x-1 bg-white p-1 rounded-lg border shadow-sm">
+              <button type="button" id="roleReporterBtn" onclick="setSearchRole('reporter')" class="px-4 py-1.5 rounded-md text-xs font-black bg-skbBlue text-white transition-all shadow-sm">
+                신고자 (Reporter)
+              </button>
+              <button type="button" id="roleTechnicianBtn" onclick="setSearchRole('technician')" class="px-4 py-1.5 rounded-md text-xs font-black text-gray-500 hover:text-gray-950 transition-all">
+                조치자 (Taker)
+              </button>
+            </div>
+          </div>
+
+          <!-- 점포명 입력 및 목록 리스트 제공 -->
+          <div>
+            <label class="block text-sm font-black text-gray-700 mb-1">1. 조회 점포명 입력 및 선택 (필수)</label>
+            <input type="text" id="searchStoreSelectInput" list="searchStoreOptions" onchange="loadReportIdsForSelectedStore()" oninput="loadReportIdsForSelectedStore()" placeholder="점포명을 입력하면 하단에 일치하는 점포명이 필터링됩니다" class="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-skbBlue text-sm" required />
+            <datalist id="searchStoreOptions"></datalist>
+          </div>
+
+          <!-- 점포에 소속된 실제 등록된 신고번호 목록 드롭다운 자동 노출 및 선택 (선택 필수 조건) -->
+          <div>
+            <label class="block text-sm font-black text-gray-700 mb-1">2. 신고번호 선택 (필수 선택)</label>
+            <select id="searchInputSelect" class="w-full p-3 border-2 border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-skbBlue text-sm">
+              <option value="">-- 먼저 올바른 점포명을 입력해 주세요 --</option>
+            </select>
+          </div>
+
+          <!-- 동적 가이드 입력 칸 -->
+          <div>
+            <label id="searchPasswordLabel" class="block text-sm font-black text-gray-700 mb-1">3. 조회 비밀번호 4자리 입력 (신고자 필수)</label>
+            <input type="password" id="searchPassword" pattern="[0-9]{4}" placeholder="접수 시 등록한 비밀번호 4자리 입력" maxlength="4" class="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-skbBlue focus:outline-none text-sm" required />
+          </div>
+          
+          <button onclick="handleSearch()" class="w-full bg-skbBlue text-white font-black py-3.5 rounded-xl hover:bg-blue-700 transition shadow text-sm">
+            🔍 조회하기
+          </button>
+        </div>
+
+        <div id="searchResults" class="space-y-3">
+          <p class="text-center text-gray-400 py-6 text-sm">조회 점포명과 함께 접수 시 등록했던 4자리 비밀번호 또는 신고번호를 기재해 주세요.</p>
+        </div>
+      </section>
+
+      <!-- ==================== Tab 3: 장애 조치 및 기술 매뉴얼 ==================== -->
+      <section id="tabManual" class="hidden space-y-4">
+        <div class="border-b border-gray-100 pb-2">
+          <h2 class="text-skbBlue flex items-center text-base">
+            <span class="mr-2 text-lg">📚</span> 자가조치 가이드 및 모니터 매뉴얼
+          </h2>
+          <p class="text-gray-400 text-xs mt-0.5">조치자를 기다리지 않고 현장에서 즉각 대처할 수 있는 실무 매뉴얼 가이드입니다.</p>
+        </div>
+
+        <!-- 3-1. 자가점검 리스트 -->
+        <div class="bg-blue-50 border-2 border-blue-200 p-4 rounded-xl space-y-2">
+          <h3 class="text-skbBlue text-base">⏱️ 접수 전 1분 자가 점검 사항</h3>
+          <ul class="list-disc pl-5 space-y-1 text-sm text-gray-800 font-semibold">
+            <li><strong>전원 상태 점검:</strong> 셋톱박스와 모니터 전원 및 멀티탭이 켜져 있는지 확인하세요.</li>
+            <li><strong>리모컨 재부팅:</strong> 리모컨으로 TV 전원을 껐다가 다시 켜 봅니다.</li>
+            <li><strong>케이블 및 장비 분해 금지:</strong> 통신 선을 임의로 해체하지 마세요.</li>
+          </ul>
+        </div>
+
+        <!-- 3-2. 모니터 매뉴얼 아코디언 세션 -->
+        <div class="space-y-2">
+          <h3 class="text-gray-900 border-b pb-1.5 text-base">📂 이마트 모니터 정밀 점검 매뉴얼</h3>
+          <div id="manual_accordion_container" class="space-y-2">
+            <p class="text-center text-gray-400 py-6 text-sm">매뉴얼 목록을 스프레드시트에서 동적으로 불러오는 중...</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- 조치 가이드 팝업 모달 -->
+  <div id="actionModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 space-y-3 shadow-2xl text-sm">
+      <div class="border-b-2 border-gray-100 pb-1.5">
+        <h3 class="font-black text-base text-skbBlue flex items-center gap-1.5">
+          <span>🔔</span> 장애 등록 완료 및 조치 가이드
+        </h3>
+      </div>
+      
+      <div class="space-y-2">
+        <div class="bg-skbLightBlue p-3 rounded-xl">
+          <strong class="block uppercase text-xs">신고 상태 맞춤 가이드</strong>
+          <p id="modalStatusText" class="font-black text-skbBlue text-sm mt-0.5"></p>
+        </div>
+        <div class="space-y-1.5">
+          <strong class="text-gray-800 block text-xs">📋 접수 후 조치 프로세스 안내:</strong>
+          <div id="modalInstructions" class="text-gray-600 space-y-1.5 font-semibold pl-1 leading-relaxed text-sm"></div>
+        </div>
+      </div>
+
+      <button type="button" onclick="closeActionModal()" class="w-full bg-skbBlue text-white font-black py-3 rounded-lg shadow hover:bg-blue-700 transition text-sm">
+        확인 및 닫기
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center z-50">
+    <div class="animate-spin rounded-full h-12 w-16 border-t-4 border-b-4 border-emartYellow mb-2"></div>
+    <p class="text-white font-black text-xs" id="loadingText">데이터를 처리하는 중...</p>
+  </div>
+
+  <!-- ==================== Firebase SDK v10 연동 모듈 ==================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    //import { initializeApp } from "firebase/app";
+    import { getFirestore, doc, getDoc, getDocs, collection, query, where, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // =========================================================================
+    // [중요 설정]: 본인의 Firebase 콘솔 ➡️ 프로젝트 설정 ➡️ 웹 앱 등록 후 복사한 설정값 대입
+    // =========================================================================
+    // Import the functions you need from the SDKs you need
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBDiX4Q70tnEjARzAupGqp26BrFsUeAS-M",
+      authDomain: "emart-skb-8625c.firebaseapp.com",
+      projectId: "emart-skb-8625c",
+      storageBucket: "emart-skb-8625c.firebasestorage.app",
+      messagingSenderId: "956931890650",
+      appId: "1:956931890650:web:413c472d96d15fda02f4e3"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 글로벌 상태 제어 변수
+    let storeList = [];
+    let selectedConsentTime = null;
+    let currentLookupData = null;
+    let searchRole = 'reporter'; 
+
+    let updatePhotoBase64 = "";
+    let updatePhotoName = "";
+
+    // 런타임 통신 지연 잠김을 우회하기 위한 비동기 병렬화 플래그
+    let storesLoaded = false;
+    let mediaTypesLoaded = false;
+    let manualsLoaded = false;
+
+    function checkAllLoaded() {
+      if (storesLoaded && mediaTypesLoaded && manualsLoaded) {
+        hideLoading();
+      }
+    }
+
+    // 런타임 inline 호출을 위해 window 전역 객체 바인딩 수행
+    window.handleConsentChange = function(chk) {
+      try {
+        const display = document.getElementById('consentTimeDisplay');
+        const formArea = document.getElementById('reportFormArea');
+        const promptMsg = document.getElementById('consentPromptMsg');
+
+        if (chk.checked) {
+          selectedConsentTime = new Date().toISOString();
+          let formattedDate = "";
+          try {
+            const now = new Date(selectedConsentTime);
+            const year = now.getFullYear();
+            const month = ("0" + (now.getMonth() + 1)).slice(-2);
+            const date = ("0" + now.getDate()).slice(-2);
+            const hours = ("0" + now.getHours()).slice(-2);
+            const minutes = ("0" + now.getMinutes()).slice(-2);
+            formattedDate = year + "-" + month + "-" + date + " " + hours + ":" + minutes;
+          } catch (dateErr) {
+            formattedDate = new Date().toLocaleString(); 
+          }
+          
+          if (display) display.innerText = "✓ 동의 완료 (" + formattedDate + ")";
+          if (formArea) formArea.classList.remove('hidden');
+          if (promptMsg) promptMsg.classList.add('hidden');
+        } else {
+          selectedConsentTime = null;
+          if (display) display.innerText = "";
+          if (formArea) formArea.classList.add('hidden');
+          if (promptMsg) promptMsg.classList.remove('hidden');
+          
+          resetSerialLookup();
+          const rForm = document.getElementById('reportForm');
+          if (rForm) rForm.reset();
+        }
+      } catch (err) {
+        console.warn("Consent Bypass Guard Activated: " + err.toString());
+        const formArea = document.getElementById('reportFormArea');
+        const promptMsg = document.getElementById('consentPromptMsg');
+        if (formArea) formArea.classList.remove('hidden');
+        if (promptMsg) promptMsg.classList.add('hidden');
+      }
+    };
+
+    window.toggleSerialSkipMode = function(chk) {
+      const serialContainer = document.getElementById('serialInputContainer');
+      const displayArea = document.getElementById('lookupDisplayArea');
+      const manualArea = document.getElementById('manualInputArea');
+
+      if (chk.checked) {
+        serialContainer.classList.add('hidden');
+        displayArea.classList.add('hidden');
+        manualArea.classList.remove('hidden');
+        currentLookupData = null;
+      } else {
+        serialContainer.classList.remove('hidden');
+        manualArea.classList.add('hidden');
+      }
+    };
+
+    window.performSerialLookup = async function() {
+      const serialNo = document.getElementById('serialNoInput').value.trim();
+      if (!serialNo) {
+        alert("시리얼 번호를 입력해 주세요.");
+        return;
+      }
+
+      // 1차 유효성 가드 (정확히 숫자 7자리 제한)
+      if (serialNo.length !== 7 || !/^\d{7}$/.test(serialNo)) {
+        alert("올바르지 않은 입력입니다.\n시리얼 번호는 숫자 7자리(예: 1077001)로 정확히 입력해 주세요.");
+        document.getElementById('serialNoInput').focus();
+        return;
+      }
+
+      showLoading("장애관리 데이터베이스 조회 중...");
+      try {
+        const storeCode = serialNo.substring(0, 4);
+        
+        // 1. 점포 마스터 정보 조회
+        const storeDoc = await getDoc(doc(db, "stores", storeCode));
+        if (!storeDoc.exists()) {
+          hideLoading();
+          alert("입력하신 시리얼 번호의 앞 4자리(" + storeCode + ")와 매칭되는 이마트 점포를 찾을 수 없습니다.");
+          resetSerialLookup();
+          return;
+        }
+        const storeData = storeDoc.data();
+        currentLookupData = {
+          store: {
+            code: storeData.code,
+            name: storeData.name,
+            manager: storeData.manager,
+            region: storeData.region
+          },
+          media: null
+        };
+
+        document.getElementById('dispStoreName').innerText = storeData.name;
+        document.getElementById('dispStoreManager').innerText = storeData.region + " / " + storeData.manager;
+
+        // 2. 매체 정밀 매핑 정보 조회
+        const mediaDoc = await getDoc(doc(db, "media", serialNo));
+        const lookupArea = document.getElementById('lookupDisplayArea');
+        const manualArea = document.getElementById('manualInputArea');
+
+        if (mediaDoc.exists()) {
+          const mediaData = mediaDoc.data();
+          currentLookupData.media = {
+            mediaType: mediaData.mediaType,
+            location: mediaData.location,
+            serviceNo: mediaData.serviceNo,
+            macAddress: mediaData.macAddress
+          };
+          document.getElementById('dispMediaType').innerText = mediaData.mediaType;
+          document.getElementById('dispLocation').innerText = mediaData.location;
+          document.getElementById('dispServiceNo').innerText = mediaData.serviceNo;
+          document.getElementById('dispMacAddress').innerText = mediaData.macAddress;
+          lookupArea.classList.remove('hidden');
+          manualArea.classList.add('hidden');
+        } else {
+          alert("존재하지 않거나 데이터베이스에 등록되지 않은 시리얼 번호입니다.\n수동 정보 설정을 활성화합니다.");
+          document.getElementById('skipSerialCheckbox').checked = true;
+          toggleSerialSkipMode(document.getElementById('skipSerialCheckbox'));
+        }
+      } catch (err) {
+        alert("Firestore 조회 실패: " + err.message);
+      }
+      hideLoading();
+    };
+
+    window.resetSerialLookup = function() {
+      document.getElementById('serialNoInput').value = "";
+      document.getElementById('lookupDisplayArea').classList.add('hidden');
+      document.getElementById('manualInputArea').classList.add('hidden');
+      document.getElementById('skipSerialCheckbox').checked = false;
+      document.getElementById('serialInputContainer').classList.remove('hidden');
+      currentLookupData = null;
+    };
+
+    window.previewImage = function(input) {
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        photoName = file.name;
+        showLoading("화질 유지 최적화 이미지 압축 중...");
+        compressImage(file, 1024, 1024, 0.7, function(compressedBase64) {
+          document.getElementById('imagePreview').src = compressedBase64;
+          document.getElementById('uploadPlaceholder').classList.add('hidden');
+          document.getElementById('imagePreviewContainer').classList.remove('hidden');
+          base64Photo = compressedBase64;
+          hideLoading();
+        });
+      }
+    };
+
+    window.removeImage = function(e) {
+      if (e && typeof e.stopPropagation === 'function') {
+        e.stopPropagation();
+      }
+      document.getElementById('photoFile').value = "";
+      document.getElementById('imagePreview').src = "#";
+      document.getElementById('uploadPlaceholder').classList.remove('hidden');
+      document.getElementById('imagePreviewContainer').classList.add('hidden');
+      base64Photo = "";
+      photoName = "";
+    };
+
+    window.handleReportSubmit = async function(e) {
+      e.preventDefault();
+      try {
+        const skipSerial = document.getElementById('skipSerialCheckbox').checked;
+        let storeCode = "", storeName = "", manager = "", region = "";
+        let mediaType = "모름", location = "기재 없음", serviceNo = "없음", macAddress = "없음";
+        let serialNo = "";
+
+        if (!skipSerial) {
+          if (!currentLookupData) {
+            alert("시리얼 번호 조회를 먼저 수행하시거나 '시리얼번호 모름'을 선택해 주세요.");
+            return;
+          }
+          storeCode = currentLookupData.store.code;
+          storeName = currentLookupData.store.name;
+          manager = currentLookupData.store.manager;
+          region = currentLookupData.store.region;
+          serialNo = document.getElementById('serialNoInput').value.trim();
+
+          if (serialNo.length !== 7 || !/^\d{7}$/.test(serialNo)) {
+            alert("입력한 시리얼 번호가 숫자 7자리가 아닙니다. 올바른 형식으로 조회해 주십시오.");
+            document.getElementById('serialNoInput').focus();
+            return;
+          }
+
+          if (currentLookupData.media) {
+            mediaType = currentLookupData.media.mediaType || "모름";
+            location = currentLookupData.media.location || "기재 없음";
+            serviceNo = currentLookupData.media.serviceNo || "없음";
+            macAddress = currentLookupData.media.macAddress || "없음";
+          } else {
+            mediaType = document.getElementById('manualMediaType').value;
+            location = document.getElementById('manualLocation').value || "조회된 위치";
+          }
+        } else {
+          // [수정 완수] 수동 입력 폼 필수 검색 스크립트 기반 유효성 가드
+          const typedStoreName = document.getElementById('storeSelectInput').value.trim();
+          if (!typedStoreName) {
+            alert("수동 입력 모드에서는 '점포명' 검색 및 선택을 완료해 주세요.");
+            document.getElementById('storeSelectInput').focus();
+            return;
+          }
+          const matchedStore = storeList.find(s => s.name === typedStoreName);
+          if (!matchedStore) {
+            alert("지정되지 않은 이마트 지점명입니다. 추천 검색 단어를 정확히 터치해 주세요.");
+            document.getElementById('storeSelectInput').focus();
+            return;
+          }
+          storeCode = matchedStore.code;
+          storeName = matchedStore.name;
+          manager = matchedStore.manager;
+          region = matchedStore.region;
+          serialNo = "모름";
+          mediaType = document.getElementById('manualMediaType').value;
+          location = document.getElementById('manualLocation').value || "수동 입력 장소";
+        }
+
+        const faultStatusEl = document.querySelector('input[name="faultStatus"]:checked');
+        const faultStatus = faultStatusEl ? faultStatusEl.value : "검은화면, 꺼져 있음";
+        const detailedDesc = document.getElementById('detailedDesc').value;
+        const reporterPhone = document.getElementById('reporterPhone').value;
+        const reportPassword = document.getElementById('reportPassword').value;
+
+        showLoading("장애신고 서버 등록 중...");
+
+        // 1. 고유 10자리 연월일 기반 접수번호 채번 가동 (YYMMDD0000)
+        const today = new Date();
+        const yy = today.getFullYear().toString().slice(-2);
+        const mm = ("0" + (today.getMonth() + 1)).slice(-2);
+        const dd = ("0" + today.getDate()).slice(-2);
+        const dateStr = yy + mm + dd;
+
+        const dayQuery = query(collection(db, "faultReports"), where("dateStr", "==", dateStr));
+        const daySnapshot = await getDocs(dayQuery);
+        const count = daySnapshot.size + 1;
+        const seqStr = ("0000" + count).slice(-4);
+        const reportId = dateStr + seqStr;
+
+        // 2. [완전 무료 우회 설계]: 스토리지 버킷을 쓰지 않고Firestore NoSQL 문서 데이터에 Base64 텍스트 다이렉트 저장
+        let photoUrl = "첨부 사진 없음";
+        if (base64Photo) {
+          photoUrl = base64Photo; 
+        }
+
+        const pinCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6자리 난수 전용키 생성
+
+        // 3. Firestore Document 단일 보존
+        const reportDoc = {
+          reportId,
+          timestamp: new Date(),
+          storeCode,
+          storeName,
+          manager,
+          region,
+          serialNo,
+          mediaType,
+          location,
+          serviceNo,
+          macAddress,
+          faultStatus,
+          detailedDesc,
+          photoUrl,
+          status: "접수완료",
+          actionDetails: "",
+          completedAt: null,
+          privacyConsent: true,
+          consentTime: selectedConsentTime ? new Date(selectedConsentTime) : new Date(),
+          reportPassword,
+          pinCode,
+          actionPhotoUrl: "첨부 사진 없음",
+          dateStr
+        };
+
+        await addDoc(collection(db, "faultReports"), reportDoc);
+        hideLoading();
+        triggerActionPopup(faultStatus, reportId, pinCode);
+
+      } catch (err) {
+        hideLoading();
+        alert("장애 접수 처리에 실패했습니다: " + err.message);
+      }
+    };
+
+    window.loadReportIdsForSelectedStore = async function() {
+      const typedStoreName = document.getElementById('searchStoreSelectInput').value.trim();
+      const matchedStore = storeList.find(s => s.name === typedStoreName);
+      const select = document.getElementById('searchInputSelect');
+      
+      if (!matchedStore) {
+        select.innerHTML = '<option value="">-- 먼저 올바른 점포명을 입력해 주세요 --</option>';
+        return;
+      }
+      
+      select.innerHTML = '<option value="">신고번호 목록을 불러오는 중...</option>';
+      try {
+        const q = query(collection(db, "faultReports"), where("storeName", "==", typedStoreName));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) {
+          select.innerHTML = '<option value="">-- 이 점포에 접수된 신고번호가 없습니다 --</option>';
+        } else {
+          let html = '<option value="">-- 조회할 신고번호 필수 선택 --</option>';
+          querySnapshot.forEach(docSnap => {
+            const rId = docSnap.data().reportId;
+            html += `<option value="${rId}">${rId}</option>`;
+          });
+          select.innerHTML = html;
+        }
+      } catch (err) {
+        select.innerHTML = '<option value="">에러: ' + err.message + '</option>';
+      }
+    };
+
+    window.setSearchRole = function(role) {
+      searchRole = role;
+      const repBtn = document.getElementById('roleReporterBtn');
+      const techBtn = document.getElementById('roleTechnicianBtn');
+      const label = document.getElementById('searchPasswordLabel');
+      const input = document.getElementById('searchPassword');
+      
+      if (role === 'reporter') {
+        repBtn.className = "px-4 py-1.5 rounded-md text-xs font-black bg-skbBlue text-white transition-all shadow-sm";
+        techBtn.className = "px-4 py-1.5 rounded-md text-xs font-black text-gray-500 hover:text-gray-950 transition-all";
+        label.innerText = "3. 조회 비밀번호 4자리 입력 (신고자 필수)";
+        input.placeholder = "접수 시 등록한 비밀번호 4자리 입력";
+        input.maxLength = 4;
+        input.pattern = "[0-9]{4}";
+      } else {
+        repBtn.className = "px-4 py-1.5 rounded-md text-xs font-black text-gray-500 hover:text-gray-950 transition-all";
+        techBtn.className = "px-4 py-1.5 rounded-md text-xs font-black bg-skbOrange text-white transition-all shadow-sm";
+        label.innerText = "3. 조치자 전용 키 6자리 입력 (조치자 필수)";
+        input.placeholder = "발급된 고유 6자리 전용 키 입력";
+        input.maxLength = 6;
+        input.pattern = "[0-9]{6}";
+      }
+      input.value = "";
+    };
+
+    window.handleSearch = async function() {
+      const storeName = document.getElementById('searchStoreSelectInput').value.trim();
+      const queryId = document.getElementById('searchInputSelect').value;
+      const password = document.getElementById('searchPassword').value.trim();
+
+      const matchedStore = storeList.find(s => s.name === storeName);
+      if (!matchedStore) {
+        alert("점포명을 정확히 기재해 주세요.");
+        return;
+      }
+      if (!queryId) {
+        alert("조회할 특정 신고번호를 드롭다운 목록에서 선택해 주세요.");
+        return;
+      }
+      if (!password) {
+        alert(searchRole === 'reporter' ? "비밀번호를 입력해 주세요." : "조치자 전용 키를 입력해 주세요.");
+        return;
+      }
+
+      if (searchRole === 'reporter' && (password.length !== 4 || !/^\d{4}$/.test(password))) {
+        alert("신고자 비밀번호 형식이 아닙니다.\n숫자 4자리로 정확히 입력해 주세요.");
+        document.getElementById('searchPassword').focus();
+        return;
+      }
+
+      if (searchRole === 'technician' && (password.length !== 6 || !/^\d{6}$/.test(password))) {
+        alert("조치자 전용 키 형식이 아닙니다.\n숫자 6자리 전용 키로 정확히 입력해 주세요.");
+        document.getElementById('searchPassword').focus();
+        return;
+      }
+
+      showLoading("조치 데이터 불러오는 중...");
+      try {
+        const q = query(collection(db, "faultReports"), where("storeName", "==", storeName), where("reportId", "==", queryId));
+        const qSnapshot = await getDocs(q);
+        
+        let results = [];
+        qSnapshot.forEach(docSnap => {
+          const data = docSnap.data();
+          let authSuccess = false;
+          
+          if (searchRole === 'reporter' && password === data.reportPassword) {
+            authSuccess = true;
+          } else if (searchRole === 'technician' && password === data.pinCode) {
+            authSuccess = true;
+          }
+
+          if (authSuccess) {
+            results.push({
+              docId: docSnap.id,
+              reportId: data.reportId,
+              timestamp: data.timestamp.toDate().toLocaleString('ko-KR'),
+              storeCode: data.storeCode,
+              storeName: data.storeName,
+              manager: data.manager,
+              region: data.region,
+              serialNo: data.serialNo,
+              mediaType: data.mediaType,
+              location: data.location,
+              serviceNo: data.serviceNo,
+              macAddress: data.macAddress,
+              faultStatus: data.faultStatus,
+              detailedDesc: data.detailedDesc,
+              photoUrl: data.photoUrl,
+              status: data.status,
+              actionDetails: data.actionDetails,
+              completedAt: data.completedAt ? data.completedAt.toDate().toLocaleString('ko-KR') : "미조치",
+              pinCode: data.pinCode,
+              actionPhotoUrl: data.actionPhotoUrl || "첨부 사진 없음",
+              viewRole: searchRole
+            });
+          }
+        });
+
+        hideLoading();
+        displaySearchResults(results);
+      } catch (err) {
+        hideLoading();
+        alert("조회 처리 에러: " + err.message);
+      }
+    };
+
+    window.previewUpdateImage = function(input, docId) {
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        updatePhotoName = file.name;
+        showLoading("조치 완료 증빙 이미지 최적화 압축 중...");
+        compressImage(file, 1024, 1024, 0.7, function(compressedBase64) {
+          document.getElementById('updatePreview_' + docId).src = compressedBase64;
+          document.getElementById('updatePreviewContainer_' + docId).classList.remove('hidden');
+          document.getElementById('removeUpdatePhotoBtn_' + docId).classList.remove('hidden');
+          updatePhotoBase64 = compressedBase64;
+          hideLoading();
+        });
+      }
+    };
+
+    window.removeUpdatePhoto = function(docId) {
+      document.getElementById('updatePhoto_' + docId).value = "";
+      document.getElementById('updatePreview_' + docId).src = "#";
+      document.getElementById('updatePreviewContainer_' + docId).classList.add('hidden');
+      document.getElementById('removeUpdatePhotoBtn_' + docId).classList.add('hidden');
+      updatePhotoBase64 = "";
+      updatePhotoName = "";
+    };
+
+    window.submitStatusUpdate = async function(docId, reportId) {
+      const status = document.getElementById('status_' + docId).value;
+      const details = document.getElementById('details_' + docId).value;
+      const key = document.getElementById('key_' + docId).value;
+
+      if (!key) {
+        alert("인증용 전용 키를 입력해 주세요.");
+        return;
+      }
+
+      showLoading("조치 상황 저장 및 전송 중...");
+      try {
+        // [완전 무료 우회 설계]: 스토리지 업로드 통신을 생략하고 Base64 문자열을 Firestore 문서에 다이렉트 보존
+        let actionPhotoUrl = "첨부 사진 없음";
+        if (updatePhotoBase64) {
+          actionPhotoUrl = updatePhotoBase64; 
+        }
+
+        const updateData = {
+          status: status,
+          actionDetails: details,
+          actionPhotoUrl: actionPhotoUrl,
+          completedAt: status === "조치완료" ? new Date() : null
+        };
+
+        const docRef = doc(db, "faultReports", docId);
+        await updateDoc(docRef, updateData);
+        
+        alert("조치 상태가 성공적으로 저장 및 통보 처리되었습니다!");
+        updatePhotoBase64 = "";
+        updatePhotoName = "";
+        handleSearch();
+      } catch (err) {
+        alert("저장 처리 에러: " + err.message);
+      }
+      hideLoading();
+    };
+
+    // Firestore 초기 데이터 로딩
+    async function loadMasterData() {
+      try {
+        const storesSnap = await getDocs(collection(db, "stores"));
+        let stores = [];
+        storesSnap.forEach(d => stores.push(d.data()));
+        storeList = stores;
+        populateStoreSelect(stores);
+
+        const typesSnap = await getDocs(collection(db, "mediaTypes"));
+        let types = [];
+        typesSnap.forEach(d => types.push(d.data().name));
+        populateMediaTypeSelect(types);
+
+        const manualsSnap = await getDocs(collection(db, "manuals"));
+        let mans = [];
+        manualsSnap.forEach(d => {
+          const dData = d.data();
+          mans.push({ id: dData.id, title: dData.title, content: dData.content });
+        });
+        mans.sort((a,b) => parseInt(a.id) - parseInt(b.id));
+        populateManual(mans);
+      } catch (err) {
+        console.error("NoSQL 마스터 연동 실패: ", err);
+      }
+    }
+
+    loadMasterData();
+  </script>
+
+  <!-- 글로벌 레이아웃 조작 핸들러 스크립트 -->
+  <script>
+    function displaySearchResults(results) {
+      const container = document.getElementById('searchResults');
+      if (!results || results.length === 0) {
+        container.innerHTML = '<div class="text-center py-6 text-gray-400 font-bold text-sm">해당 조건에 일치하는 내역이 없거나 비밀번호/전용키가 올바르지 않습니다.</div>';
+        return;
+      }
+
+      let html = '<div class="space-y-3">';
+      results.forEach(item => {
+        let statusBadgeClass = "";
+        switch (item.status) {
+          case '접수완료': statusBadgeClass = "bg-gray-100 text-gray-700 border border-gray-300"; break;
+          case '원격재부팅중': statusBadgeClass = "bg-yellow-100 text-yellow-800 border border-yellow-300"; break;
+          case '현장출동중': statusBadgeClass = "bg-orange-100 text-orange-800 border border-orange-300"; break;
+          case '대체업체이관': statusBadgeClass = "bg-purple-100 text-purple-800 border border-purple-300"; break;
+          case '조치완료': statusBadgeClass = "bg-green-100 text-green-800 border border-green-300"; break;
+        }
+
+        const isReporter = (item.viewRole === 'reporter');
+
+        html += `
+          <div class="border-2 rounded-xl bg-white overflow-hidden text-sm">
+            <div class="bg-gray-50 px-4 py-2.5 border-b flex justify-between items-center flex-wrap gap-2">
+              <div>
+                <span class="text-xs font-black text-gray-400 block">접수번호: ${item.reportId}</span>
+                <span class="text-base font-black text-skbBlue">${item.storeName} (${item.storeCode})</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="text-[10px] font-black px-2 py-0.5 rounded bg-blue-100 text-blue-800">${isReporter ? '신고자 뷰' : '조치자 뷰'}</span>
+                <span class="text-xs font-black px-2.5 py-0.5 rounded-full ${statusBadgeClass}">${item.status}</span>
+              </div>
+            </div>
+            
+            <div class="p-3.5 space-y-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 text-sm text-gray-600 font-semibold">
+                <div><span class="text-gray-400">장애 상태:</span> ${item.faultStatus}</div>
+                <div><span class="text-gray-400">시리얼번호:</span> ${item.serialNo}</div>
+                <div><span class="text-gray-400">설치 장소:</span> ${item.location}</div>
+                
+                <!-- 조치자 뷰일때만 전용키 정보 표출 -->
+                ${!isReporter ? `<div><span class="text-gray-400">조치자 전용 키:</span> <span class="text-skbOrange font-black">${item.pinCode || '미발행'}</span></div>` : ''}
+                
+                <div><span class="text-gray-400">서비스회선:</span> ${item.serviceNo}</div>
+                <div><span class="text-gray-400">맥 주소:</span> ${item.macAddress}</div>
+                <div><span class="text-gray-400">매체 유형:</span> ${item.mediaType}</div>
+                <div><span class="text-gray-400">신고 일자:</span> ${item.timestamp}</div>
+              </div>
+              
+              <div class="bg-skbLightBlue p-3 rounded-lg border border-blue-100">
+                <span class="text-xs font-bold text-skbBlue block mb-1">📢 상세 특이사항 내용</span>
+                <p class="font-black text-gray-700 leading-relaxed text-sm">${item.detailedDesc}</p>
+              </div>
+
+              <!-- [초고속 이미지 다이렉트 렌더링 카드 카드 이식 완료] -->
+              ${item.photoUrl !== "첨부 사진 없음" ? `
+                <div class="pt-2 text-center bg-gray-50 p-2.5 rounded-xl border border-gray-100">
+                  <span class="text-xs text-gray-400 block mb-1.5 font-bold">📸 현장 첨부 사진 (클릭 시 원본 확인)</span>
+                  <img src="${item.photoUrl}" class="rounded-lg shadow-sm max-h-48 mx-auto hover:scale-105 transition duration-150 cursor-pointer object-cover" onclick="window.open(this.src)" />
+                </div>
+              ` : ''}
+
+              <!-- 최종 조치 결과 기록 및 첨부 조치 증빙사진 표시 (즉시 렌더링 적용 완료) -->
+              <div class="bg-green-50 p-3 rounded-lg border border-green-200 ${item.actionDetails ? '' : 'hidden'}">
+                <span class="text-xs font-bold text-green-800 block mb-1">🛠️ 최종 조치 결과 기록</span>
+                <p class="font-black text-gray-800 leading-relaxed text-sm">${item.actionDetails || '원격 또는 현장 조치 진행 중입니다.'}</p>
+                ${item.actionPhotoUrl && item.actionPhotoUrl !== "첨부 사진 없음" ? `
+                  <div class="mt-2 pt-2 border-t border-green-200 text-center">
+                    <span class="text-xs text-green-800 block mb-1.5 font-bold">📸 조치 완료 실물 증빙 사진 (클릭 시 원본 확인)</span>
+                    <img src="${item.actionPhotoUrl}" class="rounded-lg shadow-sm max-h-48 mx-auto hover:scale-105 transition duration-150 cursor-pointer object-cover" onclick="window.open(this.src)" />
+                  </div>
+                ` : ''}
+                <span class="text-xs text-gray-400 block mt-1.5">완료시각: ${item.completedAt}</span>
+              </div>
+
+              <!-- 조치자 전용 업데이트 판넬 및 조치 실물사진 선택 탑재 (선택 사진 업로드 적용 완료) -->
+              ${!isReporter ? `
+                <div class="border-t pt-3 mt-2 bg-gray-50/50 p-3 rounded-xl border-dashed border-2">
+                  <span class="block font-black text-xs text-skbOrange uppercase tracking-wider mb-2">⚙️ 조치자 전용 처리 결과 업데이트</span>
+                  
+                  <div class="space-y-2 text-xs font-semibold">
+                    <div>
+                      <label class="block font-bold text-gray-700 mb-0.5">진행 상황 업데이트</label>
+                      <select id="status_${item.docId}" class="w-full p-2 border rounded-lg bg-white">
+                        <option value="접수완료" ${item.status === '접수완료' ? 'selected' : ''}>접수완료</option>
+                        <option value="원격재부팅중" ${item.status === '원격재부팅중' ? 'selected' : ''}>1단계: 원격재부팅중</option>
+                        <option value="현장출동중" ${item.status === '현장출동중' ? 'selected' : ''}>2단계: 현장출동중</option>
+                        <option value="대체업체이관" ${item.status === '대체업체이관' ? 'selected' : ''}>3단계: 대체업체이관</option>
+                        <option value="조치완료" ${item.status === '조치완료' ? 'selected' : ''}>최종단계: 조치완료</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block font-bold text-gray-700 mb-0.5">상세 처리 사항 기재</label>
+                      <textarea id="details_${item.docId}" rows="2" placeholder="완료 사유 및 교체 세부 내용을 기록하세요..." class="w-full p-2 border rounded-lg bg-white text-xs">${item.actionDetails || ''}</textarea>
+                    </div>
+
+                    <!-- 조치 완료 실물 증빙 사진 추가 (선택사항) -->
+                    <div class="bg-white p-2.5 rounded-lg border">
+                      <label class="block font-black text-gray-700 mb-1">조치 완료 증빙 사진 업로드 (선택)</label>
+                      <div class="flex items-center space-x-2">
+                        <input type="file" id="updatePhoto_${item.docId}" accept="image/*" onchange="previewUpdateImage(this, '${item.docId}')" class="p-1 border rounded bg-white text-xs flex-grow" />
+                        <button type="button" id="removeUpdatePhotoBtn_${item.docId}" onclick="removeUpdatePhoto('${item.docId}')" class="hidden bg-red-500 text-white px-2 py-1 rounded text-xs font-black hover:bg-red-600">✕ 삭제</button>
+                      </div>
+                      <div id="updatePreviewContainer_${item.docId}" class="hidden mt-2 text-center">
+                        <img id="updatePreview_${item.docId}" src="#" alt="조치사진 미리보기" class="rounded shadow max-h-24 mx-auto" />
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                      <div>
+                        <label class="block font-bold text-gray-700 mb-0.5">본인 확인용 전용 키 재검증</label>
+                        <input type="password" id="key_${item.docId}" value="${item.pinCode}" class="w-full p-2 border rounded-lg bg-white" readonly />
+                        <span class="text-[10px] text-gray-400 block mt-0.5">조치자 검증이 완료되어 전용키가 자동 기입 및 고정되었습니다.</span>
+                      </div>
+                      <div class="flex items-end">
+                        <button type="button" onclick="submitStatusUpdate('${item.docId}', '${item.reportId}')" class="w-full bg-skbOrange hover:bg-orange-600 text-white font-black py-2 rounded-lg shadow transition text-xs">
+                          저장 및 통보
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
+
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    function switchTab(tab) {
+      const rTab = document.getElementById('tabReport');
+      const tTab = document.getElementById('tabTrack');
+      const mTab = document.getElementById('tabManual');
+      const rBtn = document.getElementById('tabReportBtn');
+      const tBtn = document.getElementById('tabTrackBtn');
+      const mBtn = document.getElementById('tabManualBtn');
+
+      rTab.classList.add('hidden');
+      tTab.classList.add('hidden');
+      mTab.classList.add('hidden');
+      rBtn.classList.remove('tab-active');
+      tBtn.classList.remove('tab-active');
+      mBtn.classList.remove('tab-active');
+      rBtn.classList.add('text-gray-500');
+      tBtn.classList.add('text-gray-500');
+      mBtn.classList.add('text-gray-500');
+
+      if (tab === 'report') {
+        rTab.classList.remove('hidden');
+        rBtn.classList.add('tab-active');
+        rBtn.classList.remove('text-gray-500');
+      } else if (tab === 'track') {
+        tTab.classList.remove('hidden');
+        tBtn.classList.add('tab-active');
+        tBtn.classList.remove('text-gray-500');
+      } else {
+        mTab.classList.remove('hidden');
+        mBtn.classList.add('tab-active');
+        mBtn.classList.remove('text-gray-500');
+      }
+    }
+
+    function toggleAccordion(id) {
+      const items = document.querySelectorAll('.manual-item');
+      items.forEach(el => {
+        const elId = el.id;
+        const btn = el.previousElementSibling;  
+        const icon = document.getElementById(elId + "-icon");
+        if (elId === id) {
+          if (el.classList.contains('hidden')) {
+            el.classList.remove('hidden');
+            if (icon) icon.innerText = "▲";
+            if (btn) {
+              btn.classList.add('bg-blue-50', 'text-blue-900');
+              btn.classList.remove('bg-gray-50', 'text-gray-800');
+            }
+          } else {
+            el.classList.add('hidden');
+            if (icon) icon.innerText = "▼";
+            if (btn) {
+              btn.classList.add('bg-gray-50', 'text-gray-800');
+              btn.classList.remove('bg-blue-50', 'text-blue-900');
+            }
+          }
+        } else {
+          el.classList.add('hidden');
+          if (icon) icon.innerText = "▼";
+          if (btn) {
+            btn.classList.add('bg-gray-50', 'text-gray-800');
+            btn.classList.remove('bg-blue-50', 'text-blue-900');
+          }
+        }
+      });
+    }
+
+    function showLoading(msg) {
+      document.getElementById('loadingText').innerText = msg;
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingOverlay').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
