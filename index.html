@@ -282,7 +282,7 @@
       <section id="tabTrack" class="hidden space-y-4">
         <div class="border-b border-gray-100 pb-2">
           <h2 class="text-skbBlue flex items-center text-base">
-            <span class="mr-2 text-lg">🔎</span> 진행상황 및 조치 결과 확인
+            <span class="mr-2 text-lg">🔎</span> 진행 및 조치 확인
           </h2>
           <p class="text-gray-400 text-xs mt-0.5">조회 주체 역할을 활성화한 뒤 최초 비밀번호(4자리) 혹은 조치자 전용키(6자리)를 입력해 주세요.</p>
         </div>
@@ -534,8 +534,8 @@
               <span>📜 [${m.id}] ${m.title}</span>
               <span id="manual_${m.id}-icon" class="text-xs text-gray-400">▼</span>
             </button>
-            <div id="manual_${m.id}" class="manual-item hidden p-4 bg-white border-t border-gray-100 text-3xl leading-relaxed text-gray-700 whitespace-pre-wrap font-semibold">
-              ${m.content}
+            <div id="manual_${m.id}" class="manual-item hidden p-4 bg-white border-t border-gray-100 text-6xl leading-relaxed text-gray-700 whitespace-pre-wrap font-semibold">
+              ${m.content.trim()}
             </div>
           </div>
         `;
