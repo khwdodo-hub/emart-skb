@@ -116,19 +116,19 @@
 
           <!-- 접수 방법 선택 -->
           <div class="grid grid-cols-2 gap-3">
-            <button type="button" id="btnMethodPhone" onclick="selectReportMethod('phone')" class="p-3 border-2 border-gray-200 rounded-xl flex flex-col items-center justify-center space-y-1 bg-white text-center focus:outline-none">
+            <button type="button" id="btnMethodPhone" onclick="selectReportMethod('phone')" class="p-3 border-2 border-gray-200 rounded-xl flex flex-col items-center justify-center space-y-1 bg-white text-center focus:outline-none transition-all">
               <span class="text-3xl">📞</span>
               <span class="text-gray-800 text-sm">전화 신고</span>
               <span class="text-gray-400 text-xs font-bold">1670-8216 내선 1번</span>
             </button>
-            <button type="button" id="btnMethodWeb" onclick="selectReportMethod('web')" class="p-3 border-2 border-gray-200 rounded-xl flex flex-col items-center justify-center space-y-1 bg-white text-center focus:outline-none">
+            <button type="button" id="btnMethodWeb" onclick="selectReportMethod('web')" class="p-3 border-2 border-gray-200 rounded-xl flex flex-col items-center justify-center space-y-1 bg-white text-center focus:outline-none transition-all">
               <span class="text-3xl">💻</span>
               <span class="text-gray-800 text-sm">웹 신고</span>
               <span class="text-gray-400 text-xs font-bold">시리얼번호 실시간 연동</span>
             </button>
           </div>
 
-          <!-- 1-1. 전화 신고 상세 안내 구역 (도메인 에러 차단 완료) -->
+          <!-- 1-1. 전화 신고 상세 안내 구역 -->
           <div id="phoneReportArea" class="hidden bg-orange-50 border-2 border-orange-200 rounded-xl p-4 space-y-3">
             <div class="flex items-start space-x-3">
               <span class="text-2xl mt-0.5">💡</span>
@@ -185,7 +185,7 @@
                 </div>
               </div>
 
-              <!-- 시리얼 번호 모름 수동 입력 구역 (HTML5 Validation Block 버그 수정을 위해 required 속성 제거) -->
+              <!-- 시리얼 번호 모름 수동 입력 구역 -->
               <div id="manualInputArea" class="hidden bg-white border-2 border-yellow-200 rounded-xl p-3 space-y-3 shadow-sm">
                 <span class="text-yellow-800 block text-sm uppercase">매장 및 매체 정보 직접 설정</span>
                 <div>
@@ -398,15 +398,11 @@
   <!-- ==================== Firebase SDK v10 연동 모듈 ==================== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    //import { initializeApp } from "firebase/app";
     import { getFirestore, doc, getDoc, getDocs, collection, query, where, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     // =========================================================================
     // [중요 설정]: 본인의 Firebase 콘솔 ➡️ 프로젝트 설정 ➡️ 웹 앱 등록 후 복사한 설정값 대입
     // =========================================================================
-    // Import the functions you need from the SDKs you need
-    // TODO: Add SDKs for Firebase products that you want to use
-    // https://firebase.google.com/docs/web/setup#available-libraries
 
     const firebaseConfig = {
       apiKey: "AIzaSyBDiX4Q70tnEjARzAupGqp26BrFsUeAS-M",
@@ -428,6 +424,10 @@
 
     let updatePhotoBase64 = "";
     let updatePhotoName = "";
+    
+    // [수정 완수] 이미지 업로드용 전역 변수 선언 (Strict Mode 에러 방지)
+    let base64Photo = "";
+    let photoName = "";
 
     // 런타임 통신 지연 잠김을 우회하기 위한 비동기 병렬화 플래그
     let storesLoaded = false;
@@ -439,6 +439,138 @@
         hideLoading();
       }
     }
+    
+    // [추가] 접수 방법 선택 제어 함수
+    window.selectReportMethod = function(method) {
+      const phoneArea = document.getElementById('phoneReportArea');
+      const webForm = document.getElementById('reportForm');
+      const btnPhone = document.getElementById('btnMethodPhone');
+      const btnWeb = document.getElementById('btnMethodWeb');
+
+      if (method === 'phone') {
+        phoneArea.classList.remove('hidden');
+        webForm.classList.add('hidden');
+        
+        btnPhone.classList.add('border-skbOrange', 'bg-orange-50');
+        btnWeb.classList.remove('border-skbBlue', 'bg-blue-50');
+      } else if (method === 'web') {
+        phoneArea.classList.add('hidden');
+        webForm.classList.remove('hidden');
+        
+        btnPhone.classList.remove('border-skbOrange', 'bg-orange-50');
+        btnWeb.classList.add('border-skbBlue', 'bg-blue-50');
+      }
+    };
+
+    // [추가] 이미지 모바일 최적화 고속 이미지 압축기 정의
+    window.compressImage = function(file, maxWidth, maxHeight, quality, callback) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const img = new Image();
+        img.onload = function () {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxWidth) {
+              height *= maxWidth / width;
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width *= maxHeight / height;
+              height = maxHeight;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+          callback(compressedBase64);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    };
+
+    // [추가] 점포 마스터 셀렉트박스 데이터 맵핑 함수
+    window.populateStoreSelect = function(stores) {
+      const storeOptions = document.getElementById('storeOptions');
+      const searchStoreOptions = document.getElementById('searchStoreOptions');
+      if (storeOptions) {
+        storeOptions.innerHTML = stores.map(s => `<option value="${s.name}">${s.name} (${s.code})</option>`).join('');
+      }
+      if (searchStoreOptions) {
+        searchStoreOptions.innerHTML = stores.map(s => `<option value="${s.name}">${s.name} (${s.code})</option>`).join('');
+      }
+    };
+
+    // [추가] 매체 유형 셀렉트박스 데이터 맵핑 함수
+    window.populateMediaTypeSelect = function(types) {
+      const select = document.getElementById('manualMediaType');
+      if (select) {
+        select.innerHTML = '<option value="모름">모름 (선택)</option>' + 
+          types.filter(t => t !== "모름").map(t => `<option value="${t}">${t}</option>`).join('');
+      }
+    };
+
+    // [추가] 자가조치 매뉴얼 아코디언 동적 생성 함수
+    window.populateManual = function(manuals) {
+      const container = document.getElementById('manual_accordion_container');
+      if (!container) return;
+      if (manuals.length === 0) {
+        container.innerHTML = '<p class="text-center text-gray-400 py-6 text-sm">등록된 매뉴얼이 없습니다.</p>';
+        return;
+      }
+      let html = '';
+      manuals.forEach(m => {
+        html += `
+          <div class="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+            <button type="button" onclick="toggleAccordion('manual_${m.id}')" class="w-full text-left p-3.5 bg-gray-50 hover:bg-gray-100 transition flex justify-between items-center text-sm font-bold text-gray-800">
+              <span>📂 [${m.id}] ${m.title}</span>
+              <span id="manual_${m.id}-icon" class="text-xs text-gray-400">▼</span>
+            </button>
+            <div id="manual_${m.id}" class="manual-item hidden p-4 bg-white border-t border-gray-100 text-sm leading-relaxed text-gray-700 whitespace-pre-wrap font-semibold">
+              ${m.content}
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    };
+
+    // [추가] 장애 등록 완료 결과 팝업 트리거 함수
+    window.triggerActionPopup = function(faultStatus, reportId, pinCode) {
+      const modal = document.getElementById('actionModal');
+      const statusText = document.getElementById('modalStatusText');
+      const instructions = document.getElementById('modalInstructions');
+
+      if (statusText) statusText.innerText = `장애상태: [${faultStatus}]\n접수번호: ${reportId}\n조치자 전용 키: ${pinCode}`;
+      
+      if (instructions) {
+        instructions.innerHTML = `
+          <li>1. 신고 접수가 완료되었습니다. (접수번호: <strong>${reportId}</strong>)</li>
+          <li>2. 조치자 방문 시 본인 인증을 위한 조치자 전용 키는 <strong>${pinCode}</strong> 입니다.</li>
+          <li>3. 접수하신 내역은 '진행상황 확인' 탭에서 입력한 비밀번호로 조회 가능합니다.</li>
+          <li>4. 자가조치 가이드를 참고하여 직접 해결하실 수도 있습니다.</li>
+        `;
+      }
+      if (modal) modal.classList.remove('hidden');
+    };
+
+    // [추가] 팝업 닫기 및 양식 초기화 함수
+    window.closeActionModal = function() {
+      const modal = document.getElementById('actionModal');
+      if (modal) modal.classList.add('hidden');
+      resetSerialLookup();
+      const rForm = document.getElementById('reportForm');
+      if (rForm) rForm.reset();
+      switchTab('track');
+    };
 
     // 런타임 inline 호출을 위해 window 전역 객체 바인딩 수행
     window.handleConsentChange = function(chk) {
@@ -930,16 +1062,19 @@
     // Firestore 초기 데이터 로딩
     async function loadMasterData() {
       try {
+        showLoading("장애관리 데이터베이스 조회 중...");
         const storesSnap = await getDocs(collection(db, "stores"));
         let stores = [];
         storesSnap.forEach(d => stores.push(d.data()));
         storeList = stores;
         populateStoreSelect(stores);
+        storesLoaded = true;        
 
         const typesSnap = await getDocs(collection(db, "mediaTypes"));
         let types = [];
         typesSnap.forEach(d => types.push(d.data().name));
         populateMediaTypeSelect(types);
+        mediaTypesLoaded = true;
 
         const manualsSnap = await getDocs(collection(db, "manuals"));
         let mans = [];
@@ -949,8 +1084,12 @@
         });
         mans.sort((a,b) => parseInt(a.id) - parseInt(b.id));
         populateManual(mans);
+        manualsLoaded = true;
+
+        checkAllLoaded();
       } catch (err) {
         console.error("NoSQL 마스터 연동 실패: ", err);
+        hideLoading();
       }
     }
 
