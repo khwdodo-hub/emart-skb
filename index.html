@@ -531,10 +531,10 @@
         html += `
           <div class="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
             <button type="button" onclick="toggleAccordion('manual_${m.id}')" class="w-full text-left p-3.5 bg-gray-50 hover:bg-gray-100 transition flex justify-between items-center text-sm font-bold text-gray-800">
-              <span>📂 [${m.id}] ${m.title}</span>
+              <span>📜 [${m.id}] ${m.title}</span>
               <span id="manual_${m.id}-icon" class="text-xs text-gray-400">▼</span>
             </button>
-            <div id="manual_${m.id}" class="manual-item hidden p-4 bg-white border-t border-gray-100 text-sm leading-relaxed text-gray-700 whitespace-pre-wrap font-semibold">
+            <div id="manual_${m.id}" class="manual-item hidden p-4 bg-white border-t border-gray-100 text-lg leading-relaxed text-gray-700 whitespace-pre-wrap font-semibold">
               ${m.content}
             </div>
           </div>
