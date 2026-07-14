@@ -353,7 +353,7 @@
 
         <!-- 3-2. 모니터 매뉴얼 아코디언 세션 -->
         <div class="space-y-2">
-          <h3 class="text-gray-900 border-b pb-1.5 text-base">📂 이마트 모니터 정밀 점검 매뉴얼</h3>
+          <h3 class="text-gray-900 border-b pb-1.5 text-base">📂 이마트 모니터 점검 매뉴얼</h3>
           <div id="manual_accordion_container" class="space-y-2">
             <p class="text-center text-gray-400 py-6 text-sm">매뉴얼 목록을 스프레드시트에서 동적으로 불러오는 중...</p>
           </div>
@@ -530,7 +530,7 @@
       manuals.forEach(m => {
         html += `
           <div class="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-            <button type="button" onclick="toggleAccordion('manual_${m.id}')" class="w-full text-left p-3.5 bg-gray-50 hover:bg-gray-100 transition flex justify-between items-center text-sm font-bold text-blue-850">
+            <button type="button" onclick="toggleAccordion('manual_${m.id}')" class="w-full text-left p-3 bg-gray-50 hover:bg-gray-100 transition flex justify-between items-center text-sm font-bold text-blue-850">
               <span>[${m.id}] ${m.title}</span>
               <span id="manual_${m.id}-icon" class="text-xs text-gray-400">▼</span>
             </button>
