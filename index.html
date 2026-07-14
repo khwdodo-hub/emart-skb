@@ -57,13 +57,13 @@
   <div class="max-w-4xl mx-auto px-3 mt-3">
     <div class="flex bg-white rounded-xl shadow border-2 border-gray-100 overflow-hidden">
       <button id="tabReportBtn" onclick="switchTab('report')" class="w-1/3 py-3 text-center hover:bg-gray-50 focus:outline-none transition-all tab-active">
-        📢 장애 신고 접수
+        📢 장애 신고
       </button>
       <button id="tabTrackBtn" onclick="switchTab('track')" class="w-1/3 py-3 text-center text-gray-500 hover:bg-gray-50 focus:outline-none transition-all">
-        🔍 진행상황 확인
+        🔍 진행 확인
       </button>
       <button id="tabManualBtn" onclick="switchTab('manual')" class="w-1/3 py-3 text-center text-gray-500 hover:bg-gray-50 focus:outline-none transition-all">
-        📚 자가조치 가이드
+        📚 자가 조치
       </button>
     </div>
   </div>
@@ -118,12 +118,12 @@
           <div class="grid grid-cols-2 gap-3">
             <button type="button" id="btnMethodPhone" onclick="selectReportMethod('phone')" class="p-3 border-2 border-gray-200 rounded-xl flex flex-col items-center justify-center space-y-1 bg-white text-center focus:outline-none">
               <span class="text-3xl">📞</span>
-              <span class="text-gray-800 text-sm">전화 신고 접수</span>
+              <span class="text-gray-800 text-sm">전화 신고</span>
               <span class="text-gray-400 text-xs font-bold">1670-8216 내선 1번</span>
             </button>
             <button type="button" id="btnMethodWeb" onclick="selectReportMethod('web')" class="p-3 border-2 border-gray-200 rounded-xl flex flex-col items-center justify-center space-y-1 bg-white text-center focus:outline-none">
               <span class="text-3xl">💻</span>
-              <span class="text-gray-800 text-sm">웹 신고 접수</span>
+              <span class="text-gray-800 text-sm">웹 신고</span>
               <span class="text-gray-400 text-xs font-bold">시리얼번호 실시간 연동</span>
             </button>
           </div>
